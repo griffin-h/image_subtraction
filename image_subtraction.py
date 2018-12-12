@@ -15,14 +15,17 @@ from PyZOGY.image_class import ImageClass
 import scipy
 
 
-def read_with_datasec(filename):
+def read_with_datasec(filename, header=False):
     data, hdr = fits.getdata(filename, header=True)
     ccddata = CCDData(data, wcs=WCS(hdr), unit='adu')
     ccddata.meta['filter'] = hdr['filter'][0]
     if 'datasec' in hdr:
         jmin, jmax, imin, imax = eval(hdr['datasec'].replace(':', ','))
         ccddata = ccddata[imin-1:imax, jmin-1:jmax]
-    return ccddata
+    if header:
+        return ccddata, header
+    else:
+        return ccddata
 
 
 def get_ccd_bbox(ccddata):
