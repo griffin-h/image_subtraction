@@ -17,7 +17,7 @@ import scipy
 
 def read_with_datasec(filename):
     ccddata = CCDData.read(filename, unit='adu')
-    if 'datasec' in ccd.meta:
+    if 'datasec' in ccddata.meta:
         jmin, jmax, imin, imax = eval(ccddata.meta['datasec'].replace(':', ','))
         ccddata = ccddata[imin-1:imax, jmin-1:jmax]
     return ccddata
