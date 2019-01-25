@@ -28,6 +28,10 @@ def read_with_datasec(filename):
 def get_ccd_bbox(ccddata):
     corners = [[0.], [0.5], [1.]] * np.array(ccddata.shape)[::-1]
     (ra_min, dec_min), (ra_ctr, dec_ctr), (ra_max, dec_max) = ccddata.wcs.all_pix2world(corners, 0.)
+    if ra_min > ra_max:
+        ra_min, ra_max = ra_max, ra_min
+    if dec_min > dec_max:
+        dec_min, dec_max = dec_max, dec_min
     max_size_dec = 0.199
     if dec_max - dec_min > max_size_dec:
         dec_min = dec_ctr - max_size_dec / 2.
@@ -117,7 +121,7 @@ def download_ps1_image(ra, dec, filt):
     return ccddata
 
 
-if __name__ == '__main':
+if __name__ == '__main__':
     # # Read the science image
 
     show = False
