@@ -16,11 +16,9 @@ import scipy
 
 
 def read_with_datasec(filename):
-    data, hdr = fits.getdata(filename, header=True)
-    ccddata = CCDData(data, wcs=WCS(hdr), unit='adu')
-    ccddata.meta['filter'] = hdr['filter'][0]
-    if 'datasec' in hdr:
-        jmin, jmax, imin, imax = eval(hdr['datasec'].replace(':', ','))
+    ccddata = CCDData.read(filename, unit='adu')
+    if 'datasec' in ccddata.meta:
+        jmin, jmax, imin, imax = eval(ccddata.meta['datasec'].replace(':', ','))
         ccddata = ccddata[imin-1:imax, jmin-1:jmax]
     return ccddata
 
@@ -153,7 +151,7 @@ if __name__ == '__main__':
 
     # # Download the reference image
 
-    refdata0 = download_ps1_image(ra, dec, scidata.meta['filter'])
+    refdata0 = download_ps1_image(ra, dec, scidata.meta['filter'][0])
 
     # # Update the WCS for the reference image
 
