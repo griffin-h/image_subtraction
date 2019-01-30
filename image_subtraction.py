@@ -181,8 +181,9 @@ if __name__ == '__main__':
     refdata.write(template_filename, overwrite=True)
 
     # # Make the PSF for the reference image
-
-    ref_psf, _ = make_psf(refdata, catalog, show=show)
+    refdata_unmasked = refdata.copy()
+    refdata_unmasked.mask = np.zeros_like(refdata, bool)
+    ref_psf, _ = make_psf(refdata_unmasked, catalog, show=show)
 
     # # Subtract the images and view the result
 
