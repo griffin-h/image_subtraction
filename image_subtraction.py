@@ -10,7 +10,8 @@ from astropy.table import Table
 from astropy.nddata import CCDData, NDData
 from photutils import psf, EPSFBuilder
 from io import BytesIO
-from PyZOGY.subtract import calculate_difference_image
+from PyZOGY.subtract import calculate_difference_image, calculate_difference_image_zero_point, \
+    normalize_difference_image, save_difference_image_to_file
 from PyZOGY.image_class import ImageClass
 import scipy
 
@@ -186,10 +187,12 @@ if __name__ == '__main__':
     # # Subtract the images and view the result
 
     output_filename = os.path.join(workdir, 'diff.fits')
-    science = ImageClass(scidata.data, sci_psf.data, saturation=65565)
+    science = ImageClass(scidata.data, sci_psf.data, header=scidata.header, saturation=65565)
     reference = ImageClass(refdata.data, ref_psf.data, refdata.mask)
-    difference = calculate_difference_image(science, reference, show=show, max_iterations=1)
-    fits.writeto(output_filename, difference, overwrite=True)
+    difference = calculate_difference_image(science, reference, show=show)
+    difference_zero_point = calculate_difference_image_zero_point(science, reference)
+    normalized_difference = normalize_difference_image(difference, difference_zero_point, science, reference, 'i')
+    save_difference_image_to_file(normalized_difference, science, 'i', output_filename)
 
     if show:
         vmin, vmax = np.percentile(difference, (15., 99.5))
