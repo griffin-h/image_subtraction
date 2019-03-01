@@ -741,7 +741,7 @@ def subtract_reference(filename, workdir, plot_action='', align_template=True, c
     # Reproject the Reference image to match the science image
     print('\nReprojecting Template ...\n')
     refdatas_reprojected = []
-    refdata_foot = np.zeros_like(scidata.data)
+    refdata_foot = np.zeros_like(scidata.data, float)
     for refdata in refdatas:
         reprojected, foot = reproject_interp((refdata.data, refdata.wcs), scidata.wcs, scidata.shape)
         refdatas_reprojected.append(reprojected)
