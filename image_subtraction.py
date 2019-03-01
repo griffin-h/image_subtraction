@@ -715,7 +715,7 @@ def subtract(filename, workdir, plot_action='', align_template=True, catalog_fil
         complete_catalog.write(os.path.join(workdir, scidata.meta['OBJECT'] + '.cat'), format='ascii', overwrite=True)
     else:
         complete_catalog = Table.read(catalog_file, format='ascii', guess=False)
-    mag_filter = scidata.meta['filter']
+    mag_filter = scidata.meta['filter'][0]
     catalog = cut_ps1_catalog(complete_catalog, mag_max=19.0, mag_min=16.0, max_galaxy=0.40, deltamag=1.0,
                               mag_filter=mag_filter)
 
