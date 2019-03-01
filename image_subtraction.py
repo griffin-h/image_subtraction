@@ -686,7 +686,7 @@ def run_hotpants(workdir='.'):
     os.system(hotpants_command)
 
 
-def subtract(filename, workdir, plot_action='', align_template=True, catalog_file=None, reference_files=None):
+def subtract_reference(filename, workdir, plot_action='', align_template=True, catalog_file=None, reference_files=None):
     """
     Do image subtraction on image filename and save everything to workdir directory.
 
@@ -726,7 +726,7 @@ def subtract(filename, workdir, plot_action='', align_template=True, catalog_fil
     scidata.write(science_filename, overwrite=True)
 
     # Make PSF of science image
-    print('\nMaking Science SPF ...\n')
+    print('\nMaking Science PSF ...\n')
     sci_psf, _, _, _, _ = make_psf(scidata, science_psf_catalog, plot_action, plot_name='science_aligned',
                                    workdir=workdir)
 
@@ -785,4 +785,4 @@ def subtract(filename, workdir, plot_action='', align_template=True, catalog_fil
 
 if __name__ == '__main':
     workdir, filename = os.path.split(sys.argv[1])
-    subtract(filename, workdir)
+    subtract_reference(filename, workdir)
