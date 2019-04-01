@@ -22,8 +22,8 @@ from astropy.coordinates import SkyCoord
 from astropy import units as u
 
 
-def read_with_datasec(filename):
-    ccddata = CCDData.read(filename, format='fits', unit='adu')
+def read_with_datasec(filename, hdu=0):
+    ccddata = CCDData.read(filename, format='fits', unit='adu', hdu=hdu)
     if 'datasec' in ccddata.meta:
         jmin, jmax, imin, imax = eval(ccddata.meta['datasec'].replace(':', ','))
         ccddata = ccddata[imin-1:imax, jmin-1:jmax]
