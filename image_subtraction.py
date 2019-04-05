@@ -63,14 +63,17 @@ def make_psf(data, catalog, show=False, boxsize=25.):
     if show:
         plt.figure()
         plt.imshow(epsf.data)
-        
-        nrows = int(np.ceil(len(stars)**0.5))
-        fig, axarr = plt.subplots(nrows, nrows, figsize=(20, 20), squeeze=True)
-        for ax, star in zip(axarr.ravel(), fitted_stars):
-            ax.imshow(star)
-            ax.plot(star.cutout_center[0], star.cutout_center[1], 'r+')
-    
+        plot_stars(fitted_stars)
+
     return epsf, fitted_stars
+
+
+def plot_stars(stars):
+    nrows = int(np.ceil(len(stars) ** 0.5))
+    fig, axarr = plt.subplots(nrows, nrows, figsize=(20, 20), squeeze=True)
+    for ax, star in zip(axarr.ravel(), stars):
+        ax.imshow(star)
+        ax.plot(star.cutout_center[0], star.cutout_center[1], 'r+')
 
 
 def update_wcs(wcs, p):
