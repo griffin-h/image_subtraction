@@ -50,13 +50,13 @@ def get_ps1_catalog(ra_min, dec_min, ra_max, dec_max, mag_max=21., mag_min=16., 
     return t_stars
 
 
-def make_psf(data, catalog, show=False):
+def make_psf(data, catalog, show=False, boxsize=25.):
     catalog = catalog.copy()
     catalog['x'], catalog['y'] = data.wcs.all_world2pix(catalog['raMean'], catalog['decMean'], 0)
     bkg = np.nanmedian(data)
     nddata = NDData(data - bkg)
 
-    stars = psf.extract_stars(nddata, catalog, size=25.)
+    stars = psf.extract_stars(nddata, catalog, size=boxsize)
     epsf_builder = EPSFBuilder(oversampling=1.)
     epsf, fitted_stars = epsf_builder(stars)
     
