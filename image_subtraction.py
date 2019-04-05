@@ -94,8 +94,8 @@ def wcs_offset(p, radec, xy, origwcs):
 
 
 def refine_wcs(wcs, stars, catalog):
-    xy = np.array([star.center for star in stars])
-    t_match = catalog[[star.id_label - 1 for star in stars]]
+    xy = np.array([star.center for star in stars.all_good_stars])
+    t_match = catalog[[star.id_label - 1 for star in stars.all_good_stars]]
     radec = np.array([t_match['raMean'], t_match['decMean']]).T
 
     res = scipy.optimize.minimize(wcs_offset, [0., 0., 0.], args=(radec, xy, wcs),
