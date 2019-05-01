@@ -80,9 +80,9 @@ def update_wcs(wcs, p):
     wcs.wcs.crval += p[:2]
     c, s = np.cos(p[2]), np.sin(p[2])
     if wcs.wcs.has_cd():
-        wcs.wcs.cd = wcs.wcs.cd @ np.array([[c, -s], [s, c]])
+        wcs.wcs.cd = wcs.wcs.cd @ np.array([[c, -s], [s, c]]) * p[3]
     else:
-        wcs.wcs.pc = wcs.wcs.pc @ np.array([[c, -s], [s, c]])
+        wcs.wcs.pc = wcs.wcs.pc @ np.array([[c, -s], [s, c]]) * p[3]
 
 
 def wcs_offset(p, radec, xy, origwcs):
@@ -98,10 +98,10 @@ def refine_wcs(wcs, stars, catalog):
     t_match = catalog[[star.id_label - 1 for star in stars.all_good_stars]]
     radec = np.array([t_match['raMean'], t_match['decMean']]).T
 
-    res = scipy.optimize.minimize(wcs_offset, [0., 0., 0.], args=(radec, xy, wcs),
-                                  bounds=[(-0.01, 0.01), (-0.01, 0.01), (-0.01, 0.01)])
+    res = scipy.optimize.minimize(wcs_offset, [0., 0., 0., 1.], args=(radec, xy, wcs),
+                                  bounds=[(-0.01, 0.01), (-0.01, 0.01), (-0.01, 0.01), (0.9, 1.1)])
 
-    orig_rms = wcs_offset([0., 0., 0.], radec, xy, wcs)
+    orig_rms = wcs_offset([0., 0., 0., 1.], radec, xy, wcs)
     print(' orig_fun: {}'.format(orig_rms))
     print(res)
     update_wcs(wcs, res.x)
