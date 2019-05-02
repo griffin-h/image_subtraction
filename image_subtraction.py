@@ -107,20 +107,93 @@ def refine_wcs(wcs, stars, catalog):
     update_wcs(wcs, res.x)
 
 
-def download_ps1_image(ra, dec, filt):
+def download_ps1_image(ra, dec, filt, saveas=None):
+    """
+    Download Image from PS1 and correct luptitudes back to a linear scale.
+
+    Parameters
+    ---------------
+    ra, dec           : Coordinates in degrees
+    filt              : Filter color 'g', 'r', 'i', 'z', or 'y'
+    template_filename : Path to save template file (default: do not save)
+
+    Output
+    ---------------
+    ccddata : CCDData format of data with WCS
+    """
+
+    # Query a center RA and DEC from PS1 in a specified color
     res = requests.get('http://ps1images.stsci.edu/cgi-bin/ps1filenames.py',
                  params={'ra': ra, 'dec': dec, 'filters': filt})
+
+    # Get the image and save it into hdulist
     t = Table.read(res.text, format='ascii')
     res = requests.get('http://ps1images.stsci.edu' + t['filename'][0])
     hdulist = fits.open(BytesIO(res.content))
-    
-    # https://outerspace.stsci.edu/display/PANSTARRS/PS1+DR1+caveats#PS1DR1caveats-FITSimageformatquirks
-    # https://outerspace.stsci.edu/display/PANSTARRS/PS1+Image+Cutout+Service#PS1ImageCutoutService-ImportantFITSimageformat,WCS,andflux-scalingnotes
+
+    # Linearize from luptitudes
     boffset = hdulist[1].header['boffset']
     bsoften = hdulist[1].header['bsoften']
     data_linear = boffset + bsoften * 2 * np.sinh(hdulist[1].data * np.log(10.) / 2.5)
     ccddata = CCDData(data_linear, wcs=WCS(hdulist[1].header), unit='adu')
+
+    # Save the template to file
+    if saveas is not None:
+        ccddata.write(saveas, overwrite=True)
+
     return ccddata
+
+
+def download_references(ra_min, dec_min, ra_max, dec_max, mag_filter, template_basename=None, catalog=None):
+    """
+    Download 1 to 4 references from PS1 as necessary to cover full RA & dec range
+
+    Parameters
+    ---------------
+    ra_min, ra_max   : Minimum and Maximum RA and DEC
+    dec_min, dec_max   in units of degrees
+    mag_filter       : Filter color 'g', 'r', 'i', 'z', or 'y'
+    template_basename: Filename of the output(s), to be suffixed by 0.fits, 1.fits, ...
+    catalog          : Catalog to which to align the reference image WCS (default: do not align)
+
+    Output
+    ---------------
+    refdatas   : List of CCDData objects containing the reference images
+    psf_catalog: Good stars to be used for generating the PSF (output of refine_wcs)
+
+    """
+    # Download 3PI Referece Image
+    # Query the lowest RA and DEC coordinates
+    print('\nDownloading 3PI Template ...\n')
+    refdata0 = download_ps1_image(ra_min, dec_min, mag_filter, template_basename + '0.fits')
+    ra_min_ref, dec_min_ref, ra_max_ref, dec_max_ref = get_ccd_bbox(refdata0)
+
+    # Update WCS of reference image
+    if catalog is not None:
+        print('\nAligning Template ...\n')
+        psf_catalog = refine_wcs(refdata0, catalog)
+    else:
+        psf_catalog = None
+    refdatas = [refdata0]
+
+    if (ra_max > ra_max_ref) or (dec_max > dec_max_ref):
+        print('\nTemplate too small, downloading offset template ...\n')
+        refdata1 = download_ps1_image(ra_max, dec_max, mag_filter, template_basename + '1.fits')
+        if catalog is not None:
+            refine_wcs(refdata1, catalog)
+        refdatas.append(refdata1)
+
+    # If there are three corners missing, download the extra three templates needed
+    if (ra_max > ra_max_ref) and (dec_max > dec_max_ref):
+        print('\nTemplate really offset, downloading 2 more templates ...\n')
+        refdata2 = download_ps1_image(ra_min, dec_max, mag_filter, template_basename + '2.fits')
+        refdata3 = download_ps1_image(ra_max, dec_min, mag_filter, template_basename + '3.fits')
+        if catalog is not None:
+            refine_wcs(refdata2, catalog)
+            refine_wcs(refdata3, catalog)
+        refdatas += [refdata2, refdata3]
+
+    return refdatas, psf_catalog
 
 
 if __name__ == '__main__':
