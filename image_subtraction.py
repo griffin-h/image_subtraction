@@ -159,21 +159,18 @@ def download_references(ra_min, dec_min, ra_max, dec_max, mag_filter, template_b
     Output
     ---------------
     refdatas   : List of CCDData objects containing the reference images
-    psf_catalog: Good stars to be used for generating the PSF (output of refine_wcs)
 
     """
     # Download 3PI Referece Image
     # Query the lowest RA and DEC coordinates
     print('\nDownloading 3PI Template ...\n')
     refdata0 = download_ps1_image(ra_min, dec_min, mag_filter, template_basename + '0.fits')
-    ra_min_ref, dec_min_ref, ra_max_ref, dec_max_ref = get_ccd_bbox(refdata0)
+    (ra_min_ref, dec_min_ref, ra_max_ref, dec_max_ref), _ = get_ccd_bbox(refdata0)
 
     # Update WCS of reference image
     if catalog is not None:
         print('\nAligning Template ...\n')
-        psf_catalog = refine_wcs(refdata0, catalog)
-    else:
-        psf_catalog = None
+        refine_wcs(refdata0, catalog)
     refdatas = [refdata0]
 
     if (ra_max > ra_max_ref) or (dec_max > dec_max_ref):
@@ -193,7 +190,7 @@ def download_references(ra_min, dec_min, ra_max, dec_max, mag_filter, template_b
             refine_wcs(refdata3, catalog)
         refdatas += [refdata2, refdata3]
 
-    return refdatas, psf_catalog
+    return refdatas
 
 
 if __name__ == '__main__':
@@ -227,7 +224,7 @@ if __name__ == '__main__':
     sci_psf, _ = make_psf(scidata, catalog, show=show)
 
     # # Download the reference image
-
+    # TODO: update this to use download_references instead
     refdata0 = download_ps1_image(ra, dec, scidata.meta['filter'][0])
 
     # # Update the WCS for the reference image
