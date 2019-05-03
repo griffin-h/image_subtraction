@@ -523,7 +523,7 @@ def download_references(ra_min, dec_min, ra_max, dec_max, mag_filter, template_b
     ra_min_ref, dec_min_ref, ra_max_ref, dec_max_ref = get_ccd_bbox(refdata0)
 
     # Update WCS of reference image
-    if catalog is None:
+    if catalog is not None:
         print('\nAligning Template ...\n')
         psf_catalog = refine_wcs(refdata0, catalog)
     else:
