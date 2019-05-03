@@ -186,8 +186,12 @@ def download_references(ra_min, dec_min, ra_max, dec_max, mag_filter, template_b
     filenames = {filename0, filename1, filename2, filename3}
     refdatas = []
     for i, fn in enumerate(filenames):
-        saveas = template_basename + '{:d}.fits'.format(i)
-        print('downloading', saveas)
+        if template_basename is not None:
+            saveas = template_basename + '{:d}.fits'.format(i)
+            print('downloading', saveas)
+        else:
+            saveas = None
+            print('downloading', fn)
         refdata = download_ps1_image(fn, saveas)
         if catalog is not None:
             _, stars = make_psf(refdata, catalog)
