@@ -753,7 +753,7 @@ def subtract_reference(filename, workdir, plot_action='', align_template=True, c
     # Save reprojected template
     template_finalname = os.path.join(workdir, scidata.meta['OBJECT'] + '_refalign.fits')
     refdata_reproj[np.isnan(refdata_reproj)] = 0.
-    refdata = CCDData(refdata_reproj, wcs=scidata.wcs, mask=1 - refdata_foot, unit='adu')
+    refdata = CCDData(refdata_reproj, wcs=scidata.wcs, mask=refdata_foot == 0., unit='adu')
     refdata.write(template_finalname, overwrite=True)
 
     # Plot Reference and Science images
