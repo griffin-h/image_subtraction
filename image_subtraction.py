@@ -36,7 +36,7 @@ def get_ccd_bbox(ccddata):
     if dec_max - dec_min > max_size_dec:
         dec_min = dec_ctr - max_size_dec / 2.
         dec_max = dec_ctr + max_size_dec / 2.
-    return (ra_min, dec_min, ra_max, dec_max), (ra_ctr, dec_ctr)
+    return ra_min, dec_min, ra_max, dec_max
 
 
 def get_ps1_catalog(ra_min, dec_min, ra_max, dec_max, mag_max=21., mag_min=16., mag_filter='r'):
@@ -201,6 +201,21 @@ def download_references(ra_min, dec_min, ra_max, dec_max, mag_filter, template_b
     return refdatas
 
 
+def assemble_reference(refdatas, wcs, shape):
+    """Reproject and stack the reference images to match the science image"""
+    refdatas_reprojected = []
+    refdata_foot = np.zeros(shape, float)
+    for data in refdatas:
+        reprojected, foot = reproject_interp((data.data, data.wcs), wcs, shape)
+        refdatas_reprojected.append(reprojected)
+        refdata_foot += foot
+
+    refdata_reproj = np.nanmean(refdatas_reprojected, axis=0)
+    refdata_reproj[np.isnan(refdata_reproj)] = 0.
+    refdata = CCDData(refdata_reproj, wcs=wcs, mask=refdata_foot == 0., unit='adu')
+    return refdata
+
+
 if __name__ == '__main__':
     # # Read the science image
 
@@ -211,7 +226,7 @@ if __name__ == '__main__':
 
     # # Download the PS1 catalog
 
-    ccd_bbox, (ra, dec) = get_ccd_bbox(scidata0)
+    ccd_bbox = get_ccd_bbox(scidata0)
     catalog = get_ps1_catalog(*ccd_bbox)
 
     # # Pretend to make the PSF for the science image
@@ -232,17 +247,10 @@ if __name__ == '__main__':
     sci_psf, _ = make_psf(scidata, catalog, show=show)
 
     # # Download the reference image
-    # TODO: update this to use download_references instead
-    refdata0 = download_ps1_image(ra, dec, scidata.meta['filter'][0])
-
-    # # Update the WCS for the reference image
-
-    _, ref_stars = make_psf(refdata0, catalog, show=show)
-    refine_wcs(refdata0.wcs, ref_stars, catalog)
-
-    # # Reproject the reference image to match the science image
-
-    refdata_reproj, refdata_foot = reproject_interp((refdata0.data, refdata0.wcs), scidata.wcs, scidata.shape)
+    refdatas = download_references(*ccd_bbox, scidata.meta['filter'][0], catalog=catalog)
+    refdata = assemble_reference(refdatas, scidata.wcs, scidata.shape)
+    template_filename = os.path.join(workdir, 'template.fits')
+    refdata.write(template_filename, overwrite=True)
 
     if show:
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 15))
@@ -252,14 +260,9 @@ if __name__ == '__main__':
         ax1.imshow(scidata.data, vmin=vmin, vmax=vmax)
         ax1.plot(x, y, marker='o', mec='r', mfc='none', ls='none')
 
-        norm = ImageNormalize(refdata_reproj, PercentileInterval(99.))
-        ax2.imshow(refdata_reproj, norm=norm)
+        norm = ImageNormalize(refdata.data, PercentileInterval(99.))
+        ax2.imshow(refdata.data, norm=norm)
         ax2.plot(x, y, marker='o', mec='r', mfc='none', ls='none')
-
-    template_filename = os.path.join(workdir, 'template.fits')
-    refdata_reproj[np.isnan(refdata_reproj)] = 0.
-    refdata = CCDData(refdata_reproj, wcs=scidata.wcs, mask=1-refdata_foot, unit='adu')
-    refdata.write(template_filename, overwrite=True)
 
     # # Make the PSF for the reference image
     refdata_unmasked = refdata.copy()
