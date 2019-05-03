@@ -172,14 +172,16 @@ def download_references(ra_min, dec_min, ra_max, dec_max, mag_filter, template_b
     # Update WCS of reference image
     if catalog is not None:
         print('\nAligning Template ...\n')
-        refine_wcs(refdata0, catalog)
+        _, stars0 = make_psf(refdata0, catalog)
+        refine_wcs(refdata0.wcs, stars0, catalog)
     refdatas = [refdata0]
 
     if (ra_max > ra_max_ref) or (dec_max > dec_max_ref):
         print('\nTemplate too small, downloading offset template ...\n')
         refdata1 = download_ps1_image(ra_max, dec_max, mag_filter, template_basename + '1.fits')
         if catalog is not None:
-            refine_wcs(refdata1, catalog)
+            _, stars1 = make_psf(refdata1, catalog)
+            refine_wcs(refdata1.wcs, stars1, catalog)
         refdatas.append(refdata1)
 
     # If there are three corners missing, download the extra three templates needed
@@ -188,8 +190,10 @@ def download_references(ra_min, dec_min, ra_max, dec_max, mag_filter, template_b
         refdata2 = download_ps1_image(ra_min, dec_max, mag_filter, template_basename + '2.fits')
         refdata3 = download_ps1_image(ra_max, dec_min, mag_filter, template_basename + '3.fits')
         if catalog is not None:
-            refine_wcs(refdata2, catalog)
-            refine_wcs(refdata3, catalog)
+            _, stars2 = make_psf(refdata2, catalog)
+            refine_wcs(refdata2.wcs, stars2, catalog)
+            _, stars3 = make_psf(refdata3, catalog)
+            refine_wcs(refdata3.wcs, stars3, catalog)
         refdatas += [refdata2, refdata3]
 
     return refdatas
