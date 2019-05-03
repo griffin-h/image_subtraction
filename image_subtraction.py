@@ -20,6 +20,7 @@ import matplotlib.patheffects as PathEffects
 import sys
 from astropy.coordinates import SkyCoord
 from astropy import units as u
+import warnings
 
 
 def read_with_datasec(filename, hdu=0):
@@ -487,6 +488,7 @@ def download_ps1_image(ra, dec, filt, template_filename=None):
     boffset = hdulist[1].header['boffset']
     bsoften = hdulist[1].header['bsoften']
     linear = boffset + bsoften * 2 * np.sinh(hdulist[1].data * np.log(10.) / 2.5)
+    warnings.simplefilter('ignore')  # ignore nonstandard header keywords in PS1 images
     ccddata = CCDData(linear, wcs=WCS(hdulist[1].header), unit='adu')
 
     # Save the template to file
