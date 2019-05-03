@@ -108,28 +108,42 @@ def refine_wcs(wcs, stars, catalog):
     update_wcs(wcs, res.x)
 
 
-def download_ps1_image(ra, dec, filt, saveas=None):
+def get_ps1_filename(ra, dec, filt):
     """
     Download Image from PS1 and correct luptitudes back to a linear scale.
 
     Parameters
     ---------------
-    ra, dec           : Coordinates in degrees
-    filt              : Filter color 'g', 'r', 'i', 'z', or 'y'
-    template_filename : Path to save template file (default: do not save)
+    ra, dec : Coordinates in degrees
+    filt    : Filter color 'g', 'r', 'i', 'z', or 'y'
 
     Output
     ---------------
-    ccddata : CCDData format of data with WCS
+    filename : PS1 image filename
     """
 
     # Query a center RA and DEC from PS1 in a specified color
     res = requests.get('http://ps1images.stsci.edu/cgi-bin/ps1filenames.py',
                  params={'ra': ra, 'dec': dec, 'filters': filt})
-
-    # Get the image and save it into hdulist
     t = Table.read(res.text, format='ascii')
-    res = requests.get('http://ps1images.stsci.edu' + t['filename'][0])
+
+    return t['filename'][0]
+
+
+def download_ps1_image(filename, saveas=None):
+    """
+    Download image from PS1 and correct luptitudes back to a linear scale.
+
+    Parameters
+    ---------------
+    filename : PS1 image filename (from `get_ps1_filename`)
+    saveas   : Path to save template file (default: do not save)
+
+    Output
+    ---------------
+    ccddata : CCDData format of data with WCS
+    """
+    res = requests.get('http://ps1images.stsci.edu' + filename)
     hdulist = fits.open(BytesIO(res.content))
 
     # Linearize from luptitudes
@@ -163,38 +177,22 @@ def download_references(ra_min, dec_min, ra_max, dec_max, mag_filter, template_b
     refdatas   : List of CCDData objects containing the reference images
 
     """
-    # Download 3PI Referece Image
-    # Query the lowest RA and DEC coordinates
-    print('\nDownloading 3PI Template ...\n')
-    refdata0 = download_ps1_image(ra_min, dec_min, mag_filter, template_basename + '0.fits')
-    (ra_min_ref, dec_min_ref, ra_max_ref, dec_max_ref), _ = get_ccd_bbox(refdata0)
 
-    # Update WCS of reference image
-    if catalog is not None:
-        print('\nAligning Template ...\n')
-        _, stars0 = make_psf(refdata0, catalog)
-        refine_wcs(refdata0.wcs, stars0, catalog)
-    refdatas = [refdata0]
+    filename0 = get_ps1_filename(ra_min, dec_min, mag_filter)
+    filename1 = get_ps1_filename(ra_max, dec_max, mag_filter)
+    filename2 = get_ps1_filename(ra_min, dec_max, mag_filter)
+    filename3 = get_ps1_filename(ra_max, dec_min, mag_filter)
 
-    if (ra_max > ra_max_ref) or (dec_max > dec_max_ref):
-        print('\nTemplate too small, downloading offset template ...\n')
-        refdata1 = download_ps1_image(ra_max, dec_max, mag_filter, template_basename + '1.fits')
+    filenames = {filename0, filename1, filename2, filename3}
+    refdatas = []
+    for i, fn in enumerate(filenames):
+        saveas = template_basename + '{:d}.fits'.format(i)
+        print('downloading', saveas)
+        refdata = download_ps1_image(fn, saveas)
         if catalog is not None:
-            _, stars1 = make_psf(refdata1, catalog)
-            refine_wcs(refdata1.wcs, stars1, catalog)
-        refdatas.append(refdata1)
-
-    # If there are three corners missing, download the extra three templates needed
-    if (ra_max > ra_max_ref) and (dec_max > dec_max_ref):
-        print('\nTemplate really offset, downloading 2 more templates ...\n')
-        refdata2 = download_ps1_image(ra_min, dec_max, mag_filter, template_basename + '2.fits')
-        refdata3 = download_ps1_image(ra_max, dec_min, mag_filter, template_basename + '3.fits')
-        if catalog is not None:
-            _, stars2 = make_psf(refdata2, catalog)
-            refine_wcs(refdata2.wcs, stars2, catalog)
-            _, stars3 = make_psf(refdata3, catalog)
-            refine_wcs(refdata3.wcs, stars3, catalog)
-        refdatas += [refdata2, refdata3]
+            _, stars = make_psf(refdata, catalog)
+            refine_wcs(refdata.wcs, stars, catalog)
+        refdatas.append(refdata)
 
     return refdatas
 
