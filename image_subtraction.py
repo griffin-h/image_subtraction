@@ -14,6 +14,7 @@ from PyZOGY.subtract import calculate_difference_image, calculate_difference_ima
     normalize_difference_image, save_difference_image_to_file
 from PyZOGY.image_class import ImageClass
 import scipy
+import warnings
 
 
 def read_with_datasec(filename, hdu=0):
@@ -135,6 +136,7 @@ def download_ps1_image(ra, dec, filt, saveas=None):
     boffset = hdulist[1].header['boffset']
     bsoften = hdulist[1].header['bsoften']
     data_linear = boffset + bsoften * 2 * np.sinh(hdulist[1].data * np.log(10.) / 2.5)
+    warnings.simplefilter('ignore')  # ignore warnings from nonstandard PS1 header keywords
     ccddata = CCDData(data_linear, wcs=WCS(hdulist[1].header), unit='adu')
 
     # Save the template to file
