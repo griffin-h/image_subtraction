@@ -769,7 +769,10 @@ def subtract_reference(filename, workdir, plot_action='', align_template=True, c
     print('\nSubtracting Images ...\n')
     science = ImageClass(scidata.data, sci_psf.data, header=scidata.header, saturation=65000)
     reference = ImageClass(refdata.data, ref_psf.data, refdata.mask, saturation=65000)
-    difference = subtract.calculate_difference_image(science, reference, show=False)
+    try:
+        difference = subtract.calculate_difference_image(science, reference, show=False)
+    except ValueError:
+        difference = subtract.calculate_difference_image(science, reference, show=False, size_cut=False)
 
     # Calculate the zeropoint and save
     difference_zero_point = subtract.calculate_difference_image_zero_point(science, reference)
