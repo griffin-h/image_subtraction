@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from reproject import reproject_interp
 import os
-from astropy.wcs import WCS
+from astropy.wcs import WCS, _wcs
 from astropy.visualization import PercentileInterval, ImageNormalize
 import requests
 from astropy.table import Table
@@ -195,7 +195,10 @@ def download_references(ra_min, dec_min, ra_max, dec_max, mag_filter, template_b
         refdata = download_ps1_image(fn, saveas)
         if catalog is not None:
             _, stars = make_psf(refdata, catalog)
-            refine_wcs(refdata.wcs, stars, catalog)
+            try:
+                refine_wcs(refdata.wcs, stars, catalog)
+            except _wcs.InvalidTransformError:
+                print('WARNING: unable to refine wcs')
         refdatas.append(refdata)
 
     return refdatas
