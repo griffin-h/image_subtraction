@@ -82,7 +82,7 @@ def update_wcs(wcs, p):
     c, s = np.cos(p[2]), np.sin(p[2])
     if wcs.wcs.has_cd():
         wcs.wcs.cd = wcs.wcs.cd @ np.array([[c, -s], [s, c]]) * p[3]
-    else:
+    if wcs.wcs.has_pc():
         wcs.wcs.pc = wcs.wcs.pc @ np.array([[c, -s], [s, c]]) * p[3]
 
 
