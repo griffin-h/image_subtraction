@@ -104,7 +104,7 @@ def refine_wcs(wcs, stars, catalog, use_sep=False):
     radec = np.array([t_match['raMean'], t_match['decMean']]).T
 
     res = scipy.optimize.minimize(wcs_offset, [0., 0., 0., 1.], args=(radec, xy, wcs),
-                                  bounds=[(-0.01, 0.01), (-0.01, 0.01), (-0.01, 0.01), (0.9, 1.1)])
+                                  bounds=[(-0.01, 0.01), (-0.01, 0.01), (-0.1, 0.1), (0.9, 1.1)])
 
     orig_rms = wcs_offset([0., 0., 0., 1.], radec, xy, wcs)
     print(' orig_fun: {}'.format(orig_rms))
