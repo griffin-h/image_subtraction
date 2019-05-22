@@ -279,8 +279,8 @@ if __name__ == '__main__':
     # # Subtract the images and view the result
 
     output_filename = os.path.join(workdir, 'diff.fits')
-    science = ImageClass(scidata.data, sci_psf.data, header=scidata.header, saturation=65565)
-    reference = ImageClass(refdata.data, ref_psf.data, refdata.mask)
+    science = ImageClass(scidata, sci_psf.data, saturation=65565)
+    reference = ImageClass(refdata, ref_psf.data, refdata.mask)
     difference = calculate_difference_image(science, reference, show=show)
     difference_zero_point = calculate_difference_image_zero_point(science, reference)
     normalized_difference = normalize_difference_image(difference, difference_zero_point, science, reference, 'i')
