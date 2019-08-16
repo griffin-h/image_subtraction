@@ -203,6 +203,8 @@ def download_references(ra_min, dec_min, ra_max, dec_max, mag_filter, template_b
                 refine_wcs(refdata.wcs, stars, catalog)
             except _wcs.InvalidTransformError:
                 print('WARNING: unable to refine wcs')
+            except ValueError:
+                print('WARNING: no stars found, unable to refine wcs')
         refdatas.append(refdata)
 
     return refdatas
